@@ -1,0 +1,6 @@
+# config
+.env
+.venv
+
+# dart data
+dart-test/data/
