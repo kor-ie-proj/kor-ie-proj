@@ -6,12 +6,9 @@
 
 ## Set up API Keys
 
-1. Sign up for a DART account and obtain your API key.
-2. Create a `.env` file in the root of your project directory.
-3. Add your API key to the `.env` file in the following format:
-
 ```
 DART_API_KEY=your_api_key_here
+ECOS_API_KEY=your_api_key_here
 ```
 
 ## Set up `uv` virtual environment
