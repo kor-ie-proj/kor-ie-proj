@@ -19,7 +19,7 @@ DART_API_KEY=your_api_key_here
 ```zsh
 uv venv # create virtual environment
 uv pip install -r requirements.txt # install dependencies
-source uv/bin/activate # activate virtual environment (mac)
+source .venv/bin/activate # activate virtual environment (mac)
 ```
 
 if you use window, you need to activate the virtual environment with:
