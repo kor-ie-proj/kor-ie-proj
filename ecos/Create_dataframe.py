@@ -42,3 +42,5 @@ if __name__ == "__main__":
     df.to_csv("economic_data_merged.csv", encoding='utf-8-sig')
     print(f"DataFrame 생성 완료: {df.shape}")
     print("컬럼:", list(df.columns))
+    print("\n=== DataFrame ===")
+    print(df)       

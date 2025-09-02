@@ -32,11 +32,11 @@ if __name__ == "__main__":
     print("📊 한국 경제지표 데이터 수집 및 통합")
     
     # 1. 데이터 수집
-    success1 = run_script("ECOS_data_simple.py", "ECOS 데이터 수집")
+    success1 = run_script("ECOS_data.py", "ECOS 데이터 수집")
     
     # 2. DataFrame 생성 (데이터 수집이 성공한 경우에만)
     if success1 or os.path.exists("economic_data"):
-        success2 = run_script("create_dataframe_simple.py", "DataFrame 통합")
+        success2 = run_script("Create_dataframe.py", "DataFrame 통합")
         
         if success2:
             print("\n🎉 모든 작업 완료!")

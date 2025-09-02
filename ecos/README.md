@@ -34,10 +34,10 @@ python run_all.py
 ### 3. 개별 실행
 ```bash
 # 데이터 수집
-python ECOS_data_simple.py
+python ECOS_data.py
 
 # DataFrame 생성
-python create_dataframe_simple.py
+python Create_dataframe.py
 ```
 
 ## 📁 파일 구조
