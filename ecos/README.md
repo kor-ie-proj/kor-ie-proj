@@ -34,10 +34,10 @@ python run_all.py
 ### 3. 개별 실행
 ```bash
 # 데이터 수집
-python ECOS_data.py
+python ecos_data.py
 
 # DataFrame 생성
-python Create_dataframe.py
+python create_dataframe.py
 ```
 
 ## 📁 파일 구조
@@ -45,8 +45,8 @@ python Create_dataframe.py
 ```
 ecos/
 ├── .env                           # API 키 설정
-├── ECOS_data_simple.py           # 데이터 수집 스크립트
-├── create_dataframe_simple.py    # DataFrame 생성 스크립트
+├── ecos_data.py                  # 데이터 수집 스크립트
+├── create_dataframe.py           # DataFrame 생성 스크립트
 ├── run_all.py                    # 전체 실행 스크립트
 ├── economic_data/                # 수집된 CSV 파일들
 └── economic_data_merged.csv      # 통합 DataFrame
