@@ -5,10 +5,7 @@ def create_economic_dataframe():
     """경제 데이터를 하나의 DataFrame으로 통합"""
     
     data_folder = "economic_data"
-    
-    # 수입물가지수 제외
-    exclude_files = ["import_price_철강1차제품.csv", "import_price_비금속광물.csv"]
-    csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv') and f not in exclude_files]
+    csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
     
     merged_data = {}
     

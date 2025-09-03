@@ -8,16 +8,65 @@ def now_ym():
     return datetime.now().strftime("%Y%m")
 
 def ecos(key, stat, period, start, end, item=None):
-    url = f"{BASE}/StatisticSearch/{key}/json/kr/1/10000/{stat}/{period}/{start}/{end}/"
-    if item: url += f"{item}/"
-    time.sleep(1)  # API 호출 간격
+    # 큰 기간을 여러 번에 나누어 호출 (1년씩)
+    all_rows = []
     
-    try:
-        r = requests.get(url, timeout=30)
-        j = r.json()
-        return j["StatisticSearch"]["row"] if "StatisticSearch" in j and "row" in j["StatisticSearch"] else []
-    except:
-        return []
+    start_year = int(start[:4])
+    start_month = int(start[4:])
+    end_year = int(end[:4])
+    end_month = int(end[4:])
+    
+    # 1년씩 나누어서 호출
+    for year in range(start_year, end_year + 1):
+        # 시작월과 끝월 계산
+        if year == start_year:
+            chunk_start = start
+        else:
+            chunk_start = f"{year}01"
+            
+        if year == end_year:
+            chunk_end = end
+        else:
+            chunk_end = f"{year}12"
+        
+        url = f"{BASE}/StatisticSearch/{key}/json/kr/1/10000/{stat}/{period}/{chunk_start}/{chunk_end}/"
+        if item: url += f"{item}/"
+        
+        print(f"API 호출: {chunk_start} ~ {chunk_end}")
+        
+        # 재시도 로직
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                time.sleep(2)  # 2초 대기
+                r = requests.get(url, timeout=30)
+                r.raise_for_status()  # HTTP 오류 체크
+                
+                j = r.json()
+                if "StatisticSearch" in j and "row" in j["StatisticSearch"]:
+                    rows = j["StatisticSearch"]["row"]
+                    all_rows.extend(rows)
+                    print(f"  성공: {len(rows)}개 행 수집")
+                    break
+                elif "RESULT" in j and j["RESULT"]["CODE"] != "INFO-000":
+                    print(f"  API 오류: {j['RESULT']['MESSAGE']}")
+                    break
+                else:
+                    print(f"  데이터 없음")
+                    break
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"  시도 {attempt + 1} 실패: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(5)  # 실패시 5초 대기 후 재시도
+                else:
+                    print(f"  최종 실패: {chunk_start} ~ {chunk_end}")
+            except Exception as e:
+                print(f"  예상치 못한 오류: {e}")
+                break
+    
+    print(f"총 수집된 행 수: {len(all_rows)}")
+    return all_rows
 
 def pick(rows, keys):
     if not keys: return rows
@@ -31,6 +80,7 @@ def collect_multiple_items(key, stat, period, start, end, item_names):
     for item_name in item_names:
         matching_rows = [r for r in rows if r.get("ITEM_NAME1") == item_name]
         all_rows.extend(matching_rows)
+        print(f"  {item_name}: {len(matching_rows)}개 행")
     
     return all_rows
 
@@ -54,7 +104,9 @@ def calculate_growth_rate(rows):
     return growth_rows
 
 def save(path, rows):
-    if not rows: return
+    if not rows: 
+        print(f"  경고: {path} - 저장할 데이터가 없습니다")
+        return
     
     # 중복 제거
     seen = set()
@@ -72,6 +124,8 @@ def save(path, rows):
         w.writerow(["date","value","unit","stat_name","item_name"])
         for r in rows:
             w.writerow([r.get("TIME"), r.get("DATA_VALUE"), r.get("UNIT_NAME"), r.get("STAT_NAME"), r.get("ITEM_NAME1")])
+    
+    print(f"  저장 완료: {path} ({len(rows)}개 행)")
 
 def save_individual(base_name, rows):
     """개별 파일로 저장"""
@@ -92,7 +146,7 @@ def save_individual(base_name, rows):
 if __name__ == "__main__":
     load_dotenv()
     key = os.getenv("ECOS_API_KEY")
-    start, end = "202401", now_ym()
+    start, end = "201510", now_ym()
     os.makedirs("economic_data", exist_ok=True)
     
     # 단일 파일
@@ -121,23 +175,31 @@ if __name__ == "__main__":
     
     # 데이터 수집
     for fname, stat, per, item, keys in single_files:
+        print(f"\n=== {fname} 수집 중 ===")
         rows = ecos(key, stat, per, start, end, item)
         rows = pick(rows, keys)
         save(f"economic_data/{fname}", rows)
+        print(f"{fname} 완료: {len(rows)}개 행 저장")
     
     for fname, stat, per, item, keys in m2_files:
+        print(f"\n=== {fname} 수집 중 (성장률 계산) ===")
         rows = ecos(key, stat, per, start, end, item)
         rows = pick(rows, keys)
         if rows:
             growth_rows = calculate_growth_rate(rows)
             save(f"economic_data/{fname}", growth_rows)
+            print(f"{fname} 완료: {len(growth_rows)}개 행 저장")
+        else:
+            print(f"{fname} 실패: 데이터 없음")
     
     for base_name, stat, per, item, keys in individual_files:
+        print(f"\n=== {base_name} 수집 중 (개별 파일) ===")
         if stat in ["404Y014", "401Y015"]:  # PPI, 수입물가지수
             rows = collect_multiple_items(key, stat, per, start, end, keys)
         else:
             rows = ecos(key, stat, per, start, end, item)
             rows = pick(rows, keys)
         save_individual(base_name, rows)
+        print(f"{base_name} 완료: {len(rows)}개 행 처리")
     
     print("데이터 수집 완료!")
