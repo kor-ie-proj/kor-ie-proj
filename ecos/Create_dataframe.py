@@ -5,6 +5,8 @@ def create_economic_dataframe():
     """경제 데이터를 하나의 DataFrame으로 통합"""
     
     data_folder = "economic_data"
+    
+
     csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
     
     merged_data = {}
