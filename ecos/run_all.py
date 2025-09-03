@@ -29,7 +29,7 @@ def run_script(script_name, description):
         return False
 
 if __name__ == "__main__":
-    print(" 한국 경제지표 데이터 수집 및 통합")
+    print("한국 경제지표 데이터 수집 및 통합")
     
     # 1. 데이터 수집
     success1 = run_script("ECOS_data.py", "ECOS 데이터 수집")
