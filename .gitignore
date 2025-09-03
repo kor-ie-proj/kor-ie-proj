@@ -11,3 +11,6 @@ ecos/economic_data_merged.csv
 
 # DART data
 dart_out
+
+# preprocessing
+preprocessing/integrated_data.csv
