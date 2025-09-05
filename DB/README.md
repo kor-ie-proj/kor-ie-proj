@@ -1,120 +1,215 @@
-# 데이터베이스 스키마 (Database Schema)
+# 🗄️ 데이터베이스 설정
 
-한국 건설업계 경기 예측 프로젝트의 MySQL 데이터베이스 구조
+MySQL 데이터베이스 스키마 및 연결 관리 모듈
 
-## 📋 데이터베이스 개요
+## 📋 개요
 
-- **데이터베이스명**: `IE_project`
-- **테이블 수**: 3개
-- **데이터 소스**: ECOS API + DART API + XGBoost 모델 예측 결과
+프로젝트에서 사용하는 MySQL 데이터베이스의 스키마 정의, 연결 관리, 데이터 접근 인터페이스를 제공합니다.
 
-## 🗂️ 테이블 구조
+## 🗂️ 데이터베이스 구조
 
-### 1. ecos_data - ECOS 경제지표 데이터
+### 테이블 설계
 
-**목적**: 한국은행 ECOS API에서 수집한 경제지표 저장
+#### 1. ecos_data (경제지표 데이터)
+```sql
+CREATE TABLE ecos_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    base_rate DECIMAL(5,2),                           -- 기준금리
+    cpi DECIMAL(8,2),                                 -- 소비자물가지수
+    exchange_usd_원_달러종가_15_30 DECIMAL(8,2),      -- 원달러환율
+    construction_bsi_actual DECIMAL(5,1),             -- 건설업BSI실적
+    housing_sale_price DECIMAL(8,2),                  -- 주택매매가격지수
+    housing_lease_price DECIMAL(8,2),                 -- 주택전세가격지수
+    leading_index DECIMAL(8,2),                       -- 경기선행지수
+    ccsi DECIMAL(8,2),                               -- 소비자심리지수
+    esi DECIMAL(8,2),                                -- 경제심리지수
+    m2_growth DECIMAL(8,4),                          -- M2증가율
+    market_rate_국고채3년 DECIMAL(5,2),               -- 국고채3년
+    market_rate_국고채10년 DECIMAL(5,2),              -- 국고채10년
+    market_rate_회사채3년_AA_ DECIMAL(5,2),           -- 회사채3년AA-
+    market_rate_회사채3년_BBB_ DECIMAL(5,2),          -- 회사채3년BBB-
+    ppi_비금속광물 DECIMAL(8,2),                     -- PPI비금속광물
+    ppi_철강1차제품 DECIMAL(8,2),                    -- PPI철강1차제품
+    import_price_비금속광물 DECIMAL(8,2),             -- 수입물가비금속광물
+    import_price_철강1차제품 DECIMAL(8,2),            -- 수입물가철강1차제품
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_date (date)
+);
+```
 
-| 컬럼명 | 데이터타입 | 설명 | 예시 |
-|--------|------------|------|------|
-| id | INT (PK) | 자동증가 기본키 | 1, 2, 3... |
-| date | VARCHAR(6) | 연월(YYYYMM) | 202412 |
-| base_rate | DECIMAL(5,3) | 기준금리(%) | 3.500 |
-| ccsi | DECIMAL(5,1) | 소비자동향지수 | 98.5 |
-| construction_bsi_actual | DECIMAL(5,1) | 건설업경기실사지수(실적) | 75.2 |
-| cpi | DECIMAL(8,3) | 소비자물가지수 | 104.256 |
-| exchange_usd | DECIMAL(8,2) | 원달러환율 | 1350.50 |
-| housing_lease_price | DECIMAL(8,3) | 주택전세가격지수 | 85.123 |
-| ... | ... | 총 18개 경제지표 | ... |
+#### 2. dart_data (재무데이터)
+```sql
+CREATE TABLE dart_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    corp_name VARCHAR(100) NOT NULL,                  -- 기업명
+    corp_code VARCHAR(20) NOT NULL,                   -- 기업코드
+    year INT NOT NULL,                                -- 연도
+    quarter VARCHAR(10) NOT NULL,                     -- 분기
+    report_date DATE,                                 -- 보고서일자
+    total_assets DECIMAL(20,2),                       -- 자산총계(억원)
+    total_liabilities DECIMAL(20,2),                  -- 부채총계(억원)
+    total_equity DECIMAL(20,2),                       -- 자본총계(억원)
+    revenue DECIMAL(20,2),                           -- 매출액(억원)
+    operating_profit DECIMAL(20,2),                  -- 영업이익(억원)
+    quarterly_profit DECIMAL(20,2),                  -- 분기순이익(억원)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_corp_year_quarter (corp_code, year, quarter),
+    INDEX idx_corp_name (corp_name),
+    INDEX idx_year (year),
+    UNIQUE KEY unique_corp_year_quarter (corp_code, year, quarter)
+);
+```
 
-**데이터 소스**: `../ecos/economic_data_merged.csv`  
-**업데이트 주기**: 월별  
-**데이터 기간**: 2015년 10월 ~ 현재
+#### 3. prediction_results (예측결과)
+```sql
+CREATE TABLE prediction_results (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    corp_name VARCHAR(100) NOT NULL,                  -- 기업명
+    prediction_date DATE NOT NULL,                    -- 예측일자
+    target_quarter VARCHAR(10) NOT NULL,              -- 예측대상분기
+    predicted_revenue DECIMAL(20,2),                  -- 예측매출액
+    predicted_operating_profit DECIMAL(20,2),         -- 예측영업이익
+    predicted_quarterly_profit DECIMAL(20,2),         -- 예측순이익
+    predicted_total_assets DECIMAL(20,2),             -- 예측자산총계
+    predicted_total_liabilities DECIMAL(20,2),        -- 예측부채총계
+    predicted_total_equity DECIMAL(20,2),             -- 예측자본총계
+    confidence_score DECIMAL(5,3),                    -- 신뢰도점수
+    model_version VARCHAR(50),                        -- 모델버전
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_corp_target (corp_name, target_quarter),
+    INDEX idx_prediction_date (prediction_date)
+);
+```
 
-### 2. dart_data - DART 건설업 재무데이터
+## 📁 파일 구조
 
-**목적**: 금융감독원 DART API에서 수집한 건설업체 재무제표 저장
+```
+DB/
+├── MySQL.sql              # 데이터베이스 스키마 정의
+├── database.py            # 데이터베이스 연결 클래스
+├── .env                   # 환경변수 (DB 비밀번호 등)
+└── README.md             # 이 파일
+```
 
-| 컬럼명 | 데이터타입 | 설명 | 예시 |
-|--------|------------|------|------|
-| id | INT (PK) | 자동증가 기본키 | 1, 2, 3... |
-| corp_name | VARCHAR(50) | 기업명 | 삼성물산 |
-| corp_code | VARCHAR(8) | 기업코드 | 00214601 |
-| year | INT | 연도 | 2024 |
-| quarter | VARCHAR(2) | 분기 | Q4 |
-| report_date | DATE | 보고서기준일 | 2024-12-31 |
-| total_assets | DECIMAL(20,2) | 자산총계(원) | 15000000000000.00 |
-| total_liabilities | DECIMAL(20,2) | 부채총계(원) | 8000000000000.00 |
-| total_equity | DECIMAL(20,2) | 자본총계(원) | 7000000000000.00 |
-| revenue | DECIMAL(20,2) | 매출액(원) | 3000000000000.00 |
-| operating_profit | DECIMAL(20,2) | 영업이익(원) | 200000000000.00 |
-| quarterly_profit | DECIMAL(20,2) | 분기순이익(원) | 150000000000.00 |
+## 🚀 설정 방법
 
-**데이터 소스**: `../dart/dart_out/건설10_11년로드_2015~2024_연결_분기재무_정규화.csv`  
-**대상 기업**: 10개 건설업체 (삼성물산, 현대건설, GS건설 등)  
-**업데이트 주기**: 분기별  
-**데이터 기간**: 2015년 4분기 ~ 2024년 4분기
+### 1. MySQL 설치 및 설정
 
-### 3. prediction_results - XGBoost 예측 결과
-
-**목적**: XGBoost 모델로 예측한 다음 분기 재무지표 저장
-
-| 컬럼명 | 데이터타입 | 설명 | 예시 |
-|--------|------------|------|------|
-| id | INT (PK) | 자동증가 기본키 | 1, 2, 3... |
-| corp_name | VARCHAR(50) | 기업명 | 삼성물산 |
-| prediction_quarter | VARCHAR(10) | 예측분기 | 2025Q1 |
-| prediction_date | DATE | 예측기준일 | 2025-03-31 |
-| predicted_total_assets | DECIMAL(20,2) | 예측_자산총계(원) | 16000000000000.00 |
-| predicted_total_liabilities | DECIMAL(20,2) | 예측_부채총계(원) | 8500000000000.00 |
-| predicted_total_equity | DECIMAL(20,2) | 예측_자본총계(원) | 7500000000000.00 |
-| predicted_revenue | DECIMAL(20,2) | 예측_매출액(원) | 3200000000000.00 |
-| predicted_operating_profit | DECIMAL(20,2) | 예측_영업이익(원) | 220000000000.00 |
-| predicted_quarterly_profit | DECIMAL(20,2) | 예측_분기순이익(원) | 170000000000.00 |
-| model_version | VARCHAR(20) | 모델버전 | XGBoost_v1.0 |
-
-**데이터 소스**: `../modeling/XGBoost_Predict.ipynb` 실행 결과  
-**예측 대상**: 다음 분기 재무지표 6개  
-**업데이트 주기**: 모델 실행시마다
-
-## 🔧 데이터베이스 설정
-
-### 설치 및 실행
+#### Windows
 ```bash
-# MySQL 서버 실행
-mysql -u root -p
+# MySQL 다운로드 및 설치
+# https://dev.mysql.com/downloads/mysql/
 
-# 데이터베이스 생성
-source MySQL.sql
+# MySQL 서비스 시작
+net start mysql80
 ```
 
-### 인덱스 구성
-- `ecos_data`: date 컬럼 고유 인덱스
-- `dart_data`: corp_name, report_date 인덱스
-- `prediction_results`: corp_name, prediction_quarter 복합 인덱스
+#### Linux/Mac
+```bash
+# Ubuntu
+sudo apt update
+sudo apt install mysql-server
 
-### 제약 조건
-- 각 테이블별 고유키 제약으로 중복 데이터 방지
-- 외래키 제약은 설정하지 않음 (데이터 유연성 확보)
-
-## 📊 데이터 플로우
-
-```
-1. ECOS API → economic_data_merged.csv → ecos_data 테이블
-2. DART API → 건설10_11년로드_2015~2024_연결_분기재무_정규화.csv → dart_data 테이블
-3. XGBoost 모델 → quarterly_predictions_timestamp.csv → prediction_results 테이블
+# macOS (Homebrew)
+brew install mysql
+brew services start mysql
 ```
 
-## 🚀 사용 예시
+### 2. 데이터베이스 생성
 
 ```sql
--- 최신 경제지표 조회
-SELECT * FROM ecos_data ORDER BY date DESC LIMIT 5;
+-- MySQL에 root로 접속
+mysql -u root -p
 
--- 특정 기업 재무데이터 조회
-SELECT * FROM dart_data WHERE corp_name = '삼성물산' ORDER BY year DESC, quarter DESC;
+-- 데이터베이스 생성
+CREATE DATABASE ie_project;
+USE ie_project;
 
--- 최신 예측 결과 조회
-SELECT corp_name, predicted_revenue, predicted_operating_profit 
-FROM prediction_results 
-WHERE prediction_quarter = (SELECT MAX(prediction_quarter) FROM prediction_results);
+-- 스키마 적용
+SOURCE MySQL.sql;
+
+-- 사용자 생성 및 권한 부여 (옵션)
+CREATE USER 'ie_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON ie_project.* TO 'ie_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 3. 환경변수 설정
+
+`.env` 파일 생성:
+```env
+# 데이터베이스 연결 정보
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=ie_project
+
+# API 키
+DART_API_KEY=your_dart_api_key
+ECOS_API_KEY=your_ecos_api_key
+```
+
+## 🔧 DatabaseConnection 클래스
+
+### 주요 메서드
+
+#### 연결 관리
+```python
+from database import DatabaseConnection
+
+# 데이터베이스 연결
+db = DatabaseConnection()
+db.connect()
+
+# 연결 종료
+db.disconnect()
+```
+
+#### 데이터 조회
+```python
+# ECOS 데이터 조회
+ecos_data = db.get_ecos_data()
+ecos_data = db.get_ecos_data(start_date='2020-01-01', end_date='2024-12-31')
+
+# DART 데이터 조회  
+dart_data = db.get_dart_data()
+dart_data = db.get_dart_data(corp_name='삼성물산')
+
+# 특정 기업의 특정 기간 데이터
+corp_data = db.get_dart_data(
+    corp_name='현대건설', 
+    start_year=2020, 
+    end_year=2024
+)
+```
+
+#### 데이터 저장
+```python
+# ECOS 데이터 저장
+success = db.save_ecos_data(ecos_df)
+
+# DART 데이터 저장 (증분)
+success = db.save_dart_data_incremental(dart_df)
+
+# 예측 결과 저장
+success = db.save_prediction_results(prediction_df)
+```
+
+#### 유틸리티 메서드
+```python
+# 테이블 존재 확인
+exists = db.table_exists('dart_data')
+
+# 데이터 개수 확인
+count = db.get_record_count('ecos_data')
+
+# 최신 데이터 확인
+latest = db.get_latest_data('dart_data', 'report_date')
+
+# 테이블 초기화
+db.truncate_table('prediction_results')
 ```
