@@ -33,9 +33,7 @@
 
 ```
 ecos/
-├── ecos_data.py           # 메인 수집 스크립트
-├── create_dataframe.py    # 데이터프레임 생성
-├── run_all.py            # 전체 실행 스크립트
+├── ecos_data.py           # 수집 스크립트
 ├── ecos-fetch.ipynb      # 수집 테스트 노트북
 ├── economic_data_merged.csv  # 통합 경제데이터
 ├── economic_data/        # 개별 지표 CSV 파일들
@@ -67,19 +65,8 @@ pip install requests pandas mysql-connector-python python-dotenv
 ```
 
 ### 2. 데이터 수집 실행
-
-#### 자동 수집 (권장)
 ```bash
 python ecos_data.py
-```
-
-#### 개별 실행
-```bash
-# 1. 개별 지표 수집
-python run_all.py
-
-# 2. 데이터프레임 생성
-python create_dataframe.py
 ```
 
 #### Jupyter Notebook으로 테스트
@@ -171,16 +158,11 @@ TIMEOUT = 30      # API 응답 대기 시간 (초)
 ### 데이터 수집 기간
 ```python
 # 수집 시작/종료 날짜 설정
-START_DATE = "2015-01-01"
-END_DATE = "2024-12-31"
+START_DATE = "2015-10"
+END_DATE = "2025-06"
 ```
 
 ## ⚠️ 주의사항
-
-### API 사용 제한
-- **일일 호출 한도**: 10,000건
-- **분당 호출 한도**: 100건
-- **동시 접속**: 최대 5개 세션
 
 ### 데이터 특성
 - **발표 지연**: 일부 지표는 1-2개월 지연 발표
@@ -209,6 +191,4 @@ END_DATE = "2024-12-31"
 0 9 1 * * /path/to/python /path/to/ecos_data.py
 ```
 
----
 
-📊 **ECOS 데이터 수집이 완료되면 [DART 재무데이터 수집](../dart/README.md)을 진행하세요.**
