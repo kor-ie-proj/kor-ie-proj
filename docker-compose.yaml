@@ -1,0 +1,15 @@
+services:
+    mysql_db:
+        image: mysql:8.0
+        container_name: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: 1234
+            MYSQL_DATABASE: IE_project
+        ports:
+            - '3306:3306' # host : container
+        volumes:
+            - ./db/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql # initialize database with ddl.sql
+            - mysql_data:/var/lib/mysql # persistent storage for MySQL data
+
+volumes:
+    mysql_data: # MySQL persistent storage volume definition
