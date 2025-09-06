@@ -29,3 +29,7 @@ docker-compose down -v
 - database: mysql
 - fast api inference server: inference-fast-api
 - so on... (to be added, currently only for mysql db)
+
+## flowchart
+
+![inference-model-flow](./assets/inference-model-flow.png)
