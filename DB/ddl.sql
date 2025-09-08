@@ -112,3 +112,5 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 UNIQUE KEY unique_corp_prediction (corp_name, prediction_quarter),
 INDEX idx_prediction_quarter (prediction_quarter)
 );
+
+DROP TABLE ecos_data;

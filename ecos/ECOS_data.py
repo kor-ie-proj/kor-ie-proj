@@ -6,16 +6,16 @@ import pandas as pd
 
 # DB 연결을 위한 경로 추가 및 import
 try:
-    from database import DatabaseConnection
+    from db_query import DatabaseConnection
 except ImportError:
-    # 상위 디렉토리의 DB 폴더에서 database 모듈 찾기
+    # 상위 디렉토리의 DB 폴더에서 db_query 모듈 찾기
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     db_path = os.path.join(parent_dir, 'DB')
     if db_path not in sys.path:
         sys.path.insert(0, db_path)
     try:
-        from database import DatabaseConnection
+        from db_query import DatabaseConnection
     except ImportError:
         print("데이터베이스 모듈을 찾을 수 없습니다.")
         DatabaseConnection = None
@@ -210,7 +210,7 @@ def save_to_database(all_data):
         cursor.execute(delete_query)
         print("기존 ECOS 데이터 삭제 완료")
         
-        # 항목명 → 컬럼명 매핑 (실제 CSV 파일 내용과 일치)
+        # 항목명 → 컬럼명 매핑 (DDL의 컬럼명 일치)
         item_to_column = {
             '기준금리': 'base_rate',
             '현재생활형편CSI': 'ccsi', 
@@ -218,19 +218,19 @@ def save_to_database(all_data):
             '업황전망BSI 1)': 'construction_bsi_forecast',
             '소비자물가지수': 'cpi',
             '경제심리지수(원계열)': 'esi',
-            '원/달러(종가 15:30)': 'exchange_usd_원_달러종가_15_30',
+            '원/달러(종가 15:30)': 'exchange_usd_krw_close',
             '총지수_housing_lease_price': 'housing_lease_price',
             '총지수_housing_sale_price': 'housing_sale_price', 
-            '비금속광물_import': 'import_price_비금속광물',
-            '철강1차제품_import': 'import_price_철강1차제품',
+            '비금속광물_import': 'import_price_non_metal_mineral',
+            '철강1차제품_import': 'import_price_steel_primary',
             '선행지수순환변동치': 'leading_index',
             'M2(평잔, 계절조정계열)': 'm2_growth',
-            '국고채(10년)': 'market_rate_국고채10년',
-            '국고채(3년)': 'market_rate_국고채3년',
-            '회사채(3년, AA-)': 'market_rate_회사채3년_AA_',
-            '회사채(3년, BBB-)': 'market_rate_회사채3년_BBB_',
-            '비금속광물_ppi': 'ppi_비금속광물',
-            '철강1차제품_ppi': 'ppi_철강1차제품'
+            '국고채(10년)': 'market_rate_treasury_bond_10yr',
+            '국고채(3년)': 'market_rate_treasury_bond_3yr',
+            '회사채(3년, AA-)': 'market_rate_corporate_bond_3yr_AA',
+            '회사채(3년, BBB-)': 'market_rate_corporate_bond_3yr_BBB',
+            '비금속광물_ppi': 'ppi_non_metal_mineral',
+            '철강1차제품_ppi': 'ppi_steel_primary'
         }
         
         # 파일명 → 항목명 매핑 (단일 파일들)
@@ -324,10 +324,10 @@ def save_to_database(all_data):
         insert_query = """
         INSERT INTO ecos_data (
             date, base_rate, ccsi, construction_bsi_actual, construction_bsi_forecast,
-            cpi, esi, exchange_usd_원_달러종가_15_30, housing_lease_price, housing_sale_price,
-            import_price_비금속광물, import_price_철강1차제품, leading_index, m2_growth,
-            market_rate_국고채10년, market_rate_국고채3년, market_rate_회사채3년_AA_, market_rate_회사채3년_BBB_,
-            ppi_비금속광물, ppi_철강1차제품
+            cpi, esi, exchange_usd_krw_close, housing_lease_price, housing_sale_price,
+            import_price_non_metal_mineral, import_price_steel_primary, leading_index, m2_growth,
+            market_rate_treasury_bond_10yr, market_rate_treasury_bond_3yr, market_rate_corporate_bond_3yr_AA, market_rate_corporate_bond_3yr_BBB,
+            ppi_non_metal_mineral, ppi_steel_primary
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
@@ -552,6 +552,7 @@ if __name__ == "__main__":
     else:
         print("데이터베이스 저장 실패 - CSV 파일만 사용")
     
+
     print("\n=== Merged CSV 파일 생성 시작 ===")
     
     # 통합 CSV 파일 생성 (DB와 별개)

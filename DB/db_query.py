@@ -114,6 +114,7 @@ class DatabaseConnection:
             cursor.close()
             print(f"예측 결과 {len(predictions_df)}건 저장 완료")
             return True
+        
             
         except mysql.connector.Error as e:
             print(f"데이터 삽입 오류: {e}")
