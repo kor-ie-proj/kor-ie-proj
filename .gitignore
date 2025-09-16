@@ -9,6 +9,7 @@ dart-test/data/
 # ECOS data
 ecos/economic_data/
 ecos/economic_data_merged.csv
+ecos_monthly_data.csv
 
 # DART data
 dart_out
