@@ -4,7 +4,13 @@
 
 ## 📋 개요
 
-건설업 경기 예측을 위한 핵심 거시경제 지표들을 ECOS API를 통해 수집하고 MySQL 데이터베이스에 저장합니다.
+건설업 경기 예측을 위한 핵심 거시경제 지표들을 ECOS API를 통해 **2010년 1월부터 월별**로 수집하고 MySQL 데이터베이스에 저장합니다.
+
+### 🔄 최신 업데이트 (2024.09)
+- **수집 기간**: 2010년 1월부터 현재까지 (기존 2015년 10월 → 2010년 1월)
+- **데이터 처리**: 분기별 → **월별 처리**로 변경
+- **날짜 형식**: YYYY-MM 형식으로 통일
+- **파생변수**: 분기별 변수 제거, 월별 파생변수 추가
 
 ## 🔍 수집 지표
 
@@ -33,9 +39,9 @@
 
 ```
 ecos/
-├── ecos_data.py           # 수집 스크립트
+├── ECOS_data.py          # 메인 수집 스크립트 (2010년부터)
 ├── ecos-fetch.ipynb      # 수집 테스트 노트북
-├── economic_data_merged.csv  # 통합 경제데이터
+├── economic_data_merged.csv  # 통합 경제데이터 (월별)
 ├── economic_data/        # 개별 지표 CSV 파일들
 │   ├── base_rate.csv
 │   ├── cpi.csv
@@ -66,7 +72,7 @@ pip install requests pandas mysql-connector-python python-dotenv
 
 ### 2. 데이터 수집 실행
 ```bash
-python ecos_data.py
+python ECOS_data.py
 ```
 
 #### Jupyter Notebook으로 테스트
@@ -78,7 +84,7 @@ jupyter notebook ecos-fetch.ipynb
 
 - **콘솔 출력**: 수집 진행 상황 및 결과
 - **CSV 백업**: `economic_data/` 폴더에 개별 지표 저장
-- **통합 파일**: `economic_data_merged.csv`
+- **통합 파일**: `economic_data_merged.csv` (월별 데이터)
 - **MySQL 저장**: `ecos_data` 테이블에 저장
 
 ## 🔧 주요 기능
@@ -89,9 +95,13 @@ jupyter notebook ecos-fetch.ipynb
 - **데이터 검증**: 수집된 데이터의 무결성 확인
 
 ### 데이터 전처리
-- **날짜 형식 통일**: YYYY-MM-DD 형태로 변환
+- **날짜 형식 통일**: YYYY-MM 형태로 변환 (월별)
 - **결측치 처리**: 전월 이월, 선형 보간
 - **데이터 타입 변환**: 문자열 → 숫자형
+- **파생변수 생성**: 
+  - 월별 변화율 (MoM): CPI 월별 변화율
+  - 금리차 (Spread): 국고채/회사채 금리차
+  - 월별 변동성: 환율 3개월 이동 표준편차
 
 ### 데이터베이스 연동
 - **증분 업데이트**: 신규 데이터만 추가
@@ -100,21 +110,26 @@ jupyter notebook ecos-fetch.ipynb
 
 ## 📊 데이터 구조
 
-### 수집 데이터 형식
+### 수집 데이터 형식 (월별)
 ```csv
-date,base_rate,cpi,exchange_usd_원_달러종가_15_30,construction_bsi_actual,...
-2024-01-31,3.50,113.2,1345.2,95.3,...
-2024-02-29,3.50,113.8,1332.8,98.1,...
+date_str,base_rate,cpi,exchange_usd_krw_close,construction_bsi_actual,cpi_mom,term_spread,credit_spread,...
+2024-01,3.50,113.2,1345.2,95.3,0.5,0.8,0.3,...
+2024-02,3.50,113.8,1332.8,98.1,0.6,0.7,0.2,...
 ```
 
-### MySQL 테이블 구조
+### MySQL 테이블 구조 (월별)
 ```sql
-CREATE TABLE ecos_data (
+CREATE TABLE ecos_monthly_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    date DATE NOT NULL UNIQUE,
+    date_str VARCHAR(7) NOT NULL UNIQUE,  -- YYYY-MM 형식
     base_rate DECIMAL(5,2),
     cpi DECIMAL(8,2),
-    exchange_usd_원_달러종가_15_30 DECIMAL(8,2),
+    cpi_mom DECIMAL(5,2),                 -- CPI 월별 변화율
+    exchange_usd_krw_close DECIMAL(8,2),
+    exchange_mstd DECIMAL(8,4),           -- 환율 월별 표준편차
+    term_spread DECIMAL(5,2),             -- 10Y-3Y 국고채 금리차
+    credit_spread DECIMAL(5,2),           -- BBB-AA 회사채 금리차
+    base_rate_mdiff_bp DECIMAL(6,2),      -- 기준금리 월별 변화폭(bp)
     construction_bsi_actual DECIMAL(5,1),
     -- ... 기타 경제지표 컬럼들
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -149,7 +164,7 @@ print(f"총 데이터 개수: {total_count}")
 
 ### API 호출 설정
 ```python
-# ecos_data.py 내부 설정
+# ECOS_data.py 내부 설정
 SLEEP_TIME = 0.1  # API 호출 간격 (초)
 RETRY_COUNT = 3   # 실패시 재시도 횟수
 TIMEOUT = 30      # API 응답 대기 시간 (초)
@@ -157,9 +172,9 @@ TIMEOUT = 30      # API 응답 대기 시간 (초)
 
 ### 데이터 수집 기간
 ```python
-# 수집 시작/종료 날짜 설정
-START_DATE = "2015-10"
-END_DATE = "2025-06"
+# 수집 시작/종료 날짜 설정 (2010년 1월부터)
+START_DATE = "2010-01"  # 2010년 1월부터
+END_DATE = now_ym()     # 현재 년월까지
 ```
 
 ## ⚠️ 주의사항
@@ -188,7 +203,25 @@ END_DATE = "2025-06"
 ### 자동화 설정 (옵션)
 ```bash
 # crontab으로 월별 자동 수집 설정
-0 9 1 * * /path/to/python /path/to/ecos_data.py
+0 9 1 * * /path/to/python /path/to/ECOS_data.py
 ```
+
+## 📈 데이터 활용
+
+### 전처리 관련 파일
+- **preprocessing/preprocessing.ipynb**: 월별 데이터 전처리 및 파생변수 생성
+- **modeling/**: 경제지표 예측 모델링
+
+### 주요 파생변수
+1. **월별 변화율 (MoM)**:
+   - `cpi_mom`: CPI 월별 변화율 (%)
+   
+2. **금리차 (Spread)**:
+   - `term_spread`: 장단기 금리차 (10Y-3Y 국고채)
+   - `credit_spread`: 신용위험 프리미엄 (BBB-AA 회사채)
+   
+3. **변동성 지표**:
+   - `exchange_mstd`: 환율 3개월 이동 표준편차
+   - `base_rate_mdiff_bp`: 기준금리 월별 변화폭 (bp)
 
 

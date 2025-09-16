@@ -452,7 +452,7 @@ def save_individual(base_name, rows):
 if __name__ == "__main__":
     load_dotenv()
     key = os.getenv("ECOS_API_KEY")
-    start, end = "201510", now_ym()
+    start, end = "201001", now_ym()
     
     # ecos 폴더 안에 economic_data 폴더 생성
     current_dir = os.path.dirname(os.path.abspath(__file__))

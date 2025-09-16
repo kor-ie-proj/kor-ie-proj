@@ -114,3 +114,5 @@ INDEX idx_prediction_quarter (prediction_quarter)
 );
 
 DROP TABLE ecos_data;
+
+SELECT * FROM ecos_data;
