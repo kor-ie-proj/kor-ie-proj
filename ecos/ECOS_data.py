@@ -156,7 +156,7 @@ def create_merged_csv(all_data):
                     column_name = f"{item_name}"
                 else:
                     column_name = file_name
-                
+              
                 try:
                     value = float(value_str) if value_str else None
                 except:
