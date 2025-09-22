@@ -16,3 +16,6 @@ dart_out
 
 # preprocessing
 preprocessing/integrated_data.csv
+
+# modeling
+modeling/output/
