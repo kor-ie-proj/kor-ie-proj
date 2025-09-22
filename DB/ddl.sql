@@ -1,3 +1,4 @@
+-- Active: 1752820234086@@127.0.0.1@3306@ie_project
 CREATE DATABASE IF NOT EXISTS IE_project;
 USE IE_project;
 
@@ -88,32 +89,32 @@ INDEX idx_report_date (report_date)
 CREATE TABLE final_features (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date VARCHAR(6) NOT NULL,
-    construction_bsi_actual_diff DECIMAL(5, 1),
-    housing_sale_price_diff DECIMAL(8, 3),
-    m2_growth_diff DECIMAL(8, 2),
-    credit_spread_diff DECIMAL(8, 3),
-    base_rate_diff DECIMAL(5, 3),
-    construction_bsi_mom DECIMAL(5, 1),
-    housing_sale_price_diff_ma3 DECIMAL(8, 3),
-    m2_growth_lag1 DECIMAL(8, 2),
-    base_rate_mdiff_bp DECIMAL(5, 3),
-    credit_spread_diff_ma3 DECIMAL(8, 3),
-    construction_bsi_ma3 DECIMAL(5, 1),
-    leading_index DECIMAL(5, 1),
-    housing_sale_price_diff_lag6 DECIMAL(8, 3),
-    construction_bsi_actual_lag3 DECIMAL(5, 1),
-    construction_bsi_actual_diff_ma3 DECIMAL(5, 1),
-    base_rate_diff_ma6 DECIMAL(5, 3),
-    term_spread DECIMAL(5, 3),
-    construction_bsi_actual_diff_ma6 DECIMAL(5, 1),
-    credit_spread_diff_lag1 DECIMAL(8, 3),
-    market_rate_treasury_bond_3yr DECIMAL(5, 3),
-    credit_spread_diff_ma6 DECIMAL(8, 3),
-    base_rate_diff_ma3 DECIMAL(5, 3),
-    base_rate_lag1 DECIMAL(5, 3),
-    esi DECIMAL(5, 1),
-    base_rate_diff_lag3 DECIMAL(5, 3),
-    m2_growth_diff_ma6 DECIMAL(8, 2),
+    construction_bsi_actual_diff DECIMAL(5, 1), -- 건설업경기실사지수(실적) 차이
+    housing_sale_price_diff DECIMAL(8, 3), -- 주택매매가격지수 차이
+    m2_growth_diff DECIMAL(8, 2), -- M2 통화량 증가율 차이
+    credit_spread_diff DECIMAL(8, 3), -- 신용 스프레드 차이
+    base_rate_diff DECIMAL(5, 3), -- 기준 금리 차이
+    construction_bsi_mom DECIMAL(5, 1), -- 건설업경기실사지수(실적) MoM
+    housing_sale_price_diff_ma3 DECIMAL(8, 3), -- 주택매매가격지수 3개월 이동평균 차이
+    m2_growth_lag1 DECIMAL(8, 2), -- M2 통화량 증가율 1개월 지연
+    base_rate_mdiff_bp DECIMAL(5, 3), -- 기준 금리 변동폭
+    credit_spread_diff_ma3 DECIMAL(8, 3), -- 신용 스프레드 3개월 이동평균 차이
+    construction_bsi_ma3 DECIMAL(5, 1), -- 건설업경기실사지수(실적) 3개월 이동평균
+    leading_index DECIMAL(5, 1), -- 선행지수
+    housing_sale_price_diff_lag6 DECIMAL(8, 3), -- 주택매매가격지수 6개월 지연
+    construction_bsi_actual_lag3 DECIMAL(5, 1), -- 건설업경기실사지수(실적) 3개월 지연
+    construction_bsi_actual_diff_ma3 DECIMAL(5, 1), -- 건설업경기실사지수(실적) 차이 3개월 이동평균
+    base_rate_diff_ma6 DECIMAL(5, 3), -- 기준 금리 차이 6개월 이동평균
+    term_spread DECIMAL(5, 3), -- 만기 스프레드
+    construction_bsi_actual_diff_ma6 DECIMAL(5, 1), -- 건설업경기실사지수(실적) 차이 6개월 이동평균
+    credit_spread_diff_lag1 DECIMAL(8, 3), -- 신용 스프레드 1개월 지연
+    market_rate_treasury_bond_3yr DECIMAL(5, 3), -- 국고채 3년 수익률
+    credit_spread_diff_ma6 DECIMAL(8, 3), -- 신용 스프레드 6개월 이동평균 차이
+    base_rate_diff_ma3 DECIMAL(5, 3), -- 기준 금리 차이 3개월 이동평균
+    base_rate_lag1 DECIMAL(5, 3), -- 기준 금리 1개월 지연
+    esi DECIMAL(5, 1), -- 경제 심리지수
+    base_rate_diff_lag3 DECIMAL(5, 3), -- 기준 금리 차이 3개월 지연
+    m2_growth_diff_ma6 DECIMAL(8, 2), -- M2 통화량 증가율 6개월 이동평균 차이
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_date (date)
