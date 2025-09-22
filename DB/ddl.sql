@@ -83,36 +83,56 @@ INDEX idx_corp_name (corp_name),
 INDEX idx_report_date (report_date)
 );
 
--- 3. XGBoost 모델 예측 결과 테이블
--- 데이터 소스: modeling/XGBoost_Predict.ipynb 결과
-CREATE TABLE prediction_results (
-id INT AUTO_INCREMENT PRIMARY KEY,
--- 기업명
-corp_name VARCHAR(50) NOT NULL,
--- 예측분기(예: 2025Q1)
-prediction_quarter VARCHAR(10) NOT NULL,
--- 예측기준일
-prediction_date DATE NOT NULL,
--- 예측_자산총계
-predicted_total_assets DECIMAL(20, 2),
--- 예측_부채총계
-predicted_total_liabilities DECIMAL(20, 2),
--- 예측_자본총계
-predicted_total_equity DECIMAL(20, 2),
--- 예측_매출액
-predicted_revenue DECIMAL(20, 2),
--- 예측_영업이익
-predicted_operating_profit DECIMAL(20, 2),
--- 예측_분기순이익
-predicted_quarterly_profit DECIMAL(20, 2),
--- 모델버전
-model_version VARCHAR(20) DEFAULT 'XGBoost_v1.0',
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-UNIQUE KEY unique_corp_prediction (corp_name, prediction_quarter),
-INDEX idx_prediction_quarter (prediction_quarter)
+-- 3. 학습 전 최종 피쳐 저장 테이블 
+-- 피쳐 엔지니어링 후 최종 피쳐셋 저장 
+CREATE TABLE final_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date VARCHAR(6) NOT NULL,
+    construction_bsi_actual_diff DECIMAL(5, 1),
+    housing_sale_price_diff DECIMAL(8, 3),
+    m2_growth_diff DECIMAL(8, 2),
+    credit_spread_diff DECIMAL(8, 3),
+    base_rate_diff DECIMAL(5, 3),
+    construction_bsi_mom DECIMAL(5, 1),
+    housing_sale_price_diff_ma3 DECIMAL(8, 3),
+    m2_growth_lag1 DECIMAL(8, 2),
+    base_rate_mdiff_bp DECIMAL(5, 3),
+    credit_spread_diff_ma3 DECIMAL(8, 3),
+    construction_bsi_ma3 DECIMAL(5, 1),
+    leading_index DECIMAL(5, 1),
+    housing_sale_price_diff_lag6 DECIMAL(8, 3),
+    construction_bsi_actual_lag3 DECIMAL(5, 1),
+    construction_bsi_actual_diff_ma3 DECIMAL(5, 1),
+    base_rate_diff_ma6 DECIMAL(5, 3),
+    term_spread DECIMAL(5, 3),
+    construction_bsi_actual_diff_ma6 DECIMAL(5, 1),
+    credit_spread_diff_lag1 DECIMAL(8, 3),
+    market_rate_treasury_bond_3yr DECIMAL(5, 3),
+    credit_spread_diff_ma6 DECIMAL(8, 3),
+    base_rate_diff_ma3 DECIMAL(5, 3),
+    base_rate_lag1 DECIMAL(5, 3),
+    esi DECIMAL(5, 1),
+    base_rate_diff_lag3 DECIMAL(5, 3),
+    m2_growth_diff_ma6 DECIMAL(8, 2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_date (date)
 );
 
-DROP TABLE ecos_data;
+-- 4. 모델 예측 결과 테이블
+-- 예측 결과: construction_bsi_actual, base_rate, housing_sale_price, m2_growth, credit_spread
+CREATE TABLE model_output (
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	-- YYYYMM 형식
+	date VARCHAR(6) NOT NULL,
+	-- 예측값 컬럼들
+	construction_bsi_actual DECIMAL(5, 1),
+	base_rate DECIMAL(5, 3),
+	housing_sale_price DECIMAL(8, 3),
+	m2_growth DECIMAL(8, 2),
+	credit_spread DECIMAL(8, 3),
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	UNIQUE KEY unique_date (date)
+);
 
-SELECT * FROM ecos_data;
