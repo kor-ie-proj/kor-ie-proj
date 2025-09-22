@@ -19,3 +19,6 @@ preprocessing/integrated_data.csv
 
 # modeling
 modeling/output/
+
+# DB
+DB/dump_*.sql
