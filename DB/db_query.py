@@ -18,6 +18,7 @@ class DatabaseConnection:
             'charset': 'utf8mb4'
         }
         self.connection = None
+        self.cursor = None
     
     def connect(self):
         """데이터베이스 연결"""
@@ -31,11 +32,17 @@ class DatabaseConnection:
     
     def disconnect(self):
         """데이터베이스 연결 해제"""
+        if self.cursor:
+            self.cursor.close()
         if self.connection:
             self.connection.close()
             print("MySQL 연결 해제")
     
-    def execute_query(self, query):
+    def close(self):
+        """연결 종료"""
+        self.disconnect()
+    
+    def execute_query(self, query, params=None):
         """쿼리 실행"""
         if not self.connection:
             print("데이터베이스에 연결되지 않았습니다.")
@@ -43,29 +50,60 @@ class DatabaseConnection:
         
         try:
             cursor = self.connection.cursor()
-            cursor.execute(query)
-            result = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description]
-            cursor.close()
-            return pd.DataFrame(result, columns=columns)
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            
+            if query.strip().upper().startswith('SELECT'):
+                result = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                cursor.close()
+                return pd.DataFrame(result, columns=columns)
+            else:
+                self.connection.commit()
+                cursor.close()
+                return True
+                
         except mysql.connector.Error as e:
             print(f"쿼리 실행 오류: {e}")
             return None
     
+    def fetch_all(self, query, params=None):
+        """쿼리 실행하여 튜플 리스트 반환"""
+        if not self.connection:
+            return []
+        
+        try:
+            self.cursor = self.connection.cursor()
+            if params:
+                self.cursor.execute(query, params)
+            else:
+                self.cursor.execute(query)
+            result = self.cursor.fetchall()
+            return result
+        except mysql.connector.Error as e:
+            print(f"쿼리 실행 오류: {e}")
+            return []
+    
     def get_ecos_data(self):
         """ECOS 경제지표 데이터 조회"""
-        query = """
-        SELECT * FROM ecos_data 
-        ORDER BY date
-        """
+        query = "SELECT * FROM ecos_data ORDER BY date"
         return self.execute_query(query)
     
     def get_dart_data(self):
         """DART 재무데이터 조회"""
-        query = """
-        SELECT * FROM dart_data 
-        ORDER BY corp_name, year, quarter
-        """
+        query = "SELECT * FROM dart_data ORDER BY corp_name, year, quarter"
+        return self.execute_query(query)
+    
+    def get_final_features(self):
+        """최종 피쳐 데이터 조회"""
+        query = "SELECT * FROM final_features ORDER BY date"
+        return self.execute_query(query)
+    
+    def get_model_predictions(self):
+        """모델 예측 결과 조회"""
+        query = "SELECT * FROM model_output ORDER BY date"
         return self.execute_query(query)
     
     def insert_prediction_results(self, predictions_df):
@@ -114,8 +152,8 @@ class DatabaseConnection:
             cursor.close()
             print(f"예측 결과 {len(predictions_df)}건 저장 완료")
             return True
-        
             
         except mysql.connector.Error as e:
             print(f"데이터 삽입 오류: {e}")
             return False
+            
