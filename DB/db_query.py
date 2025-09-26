@@ -4,8 +4,10 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-# 환경변수 로드
-load_dotenv()
+# 환경변수 로드 (현재 파일의 디렉토리에서 .env 찾기)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dotenv_path = os.path.join(current_dir, '.env')
+load_dotenv(dotenv_path)
 
 class DatabaseConnection:
     """MySQL 데이터베이스 연결 클래스"""
@@ -15,7 +17,7 @@ class DatabaseConnection:
             'host': os.getenv('DB_HOST', 'localhost'),
             'user': os.getenv('DB_USER', 'root'),
             'password': os.getenv('DB_PASSWORD', ''),
-            'database': os.getenv('DB_NAME', 'IE_project'),
+            'database': os.getenv('DB_NAME', 'ie_project'),
             'charset': 'utf8mb4'
         }
         self.connection = None
