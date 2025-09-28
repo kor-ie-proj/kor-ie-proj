@@ -26,3 +26,4 @@ DB/dump_*.sql
 #Heuristic
 Heuristic/dart_final.csv
 Heuristic/merged_with_ecos.csv
+Heuristic/dart_with_economic_indicators.csv
