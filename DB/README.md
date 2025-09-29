@@ -1,12 +1,12 @@
-# 🗄️ 데이터베이스 설정
+# 데이터베이스 설정
 
 MySQL 데이터베이스 스키마 및 연결 관리 모듈
 
-## 📋 개요
+## 개요
 
 프로젝트에서 사용하는 MySQL 데이터베이스의 스키마 정의, 연결 관리, 데이터 접근 인터페이스를 제공합니다.
 
-## 🗂️ 데이터베이스 구조
+## 데이터베이스 구조
 
 ### 테이블 설계
 
@@ -84,17 +84,19 @@ CREATE TABLE prediction_results (
 );
 ```
 
-## 📁 파일 구조
+## 파일 구조
 
 ```
 DB/
-├── MySQL.sql              # 데이터베이스 스키마 정의
-├── database.py            # 데이터베이스 연결 클래스
-├── .env                   # 환경변수 (DB 비밀번호 등)
+├── ddl.sql               # 데이터베이스 스키마 정의
+├── db_query.py           # 데이터베이스 연결 및 조회 클래스
+├── generate_dump.py      # 데이터베이스 덤프 생성 스크립트
+├── dump_20250922_154919.sql  # 백업 덤프 파일
+├── .env                  # 환경변수 (DB 비밀번호 등)
 └── README.md             # 이 파일
 ```
 
-## 🚀 설정 방법
+## 설정 방법
 
 ### 1. MySQL 설치 및 설정
 
@@ -125,15 +127,15 @@ brew services start mysql
 mysql -u root -p
 
 -- 데이터베이스 생성
-CREATE DATABASE ie_project;
-USE ie_project;
+CREATE DATABASE IE_project;
+USE IE_project;
 
 -- 스키마 적용
-SOURCE MySQL.sql;
+SOURCE ddl.sql;
 
 -- 사용자 생성 및 권한 부여 (옵션)
 CREATE USER 'ie_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON ie_project.* TO 'ie_user'@'localhost';
+GRANT ALL PRIVILEGES ON IE_project.* TO 'ie_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -146,20 +148,20 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_mysql_password
-DB_NAME=ie_project
+DB_NAME=IE_project
 
 # API 키
 DART_API_KEY=your_dart_api_key
 ECOS_API_KEY=your_ecos_api_key
 ```
 
-## 🔧 DatabaseConnection 클래스
+## DatabaseConnection 클래스
 
 ### 주요 메서드
 
 #### 연결 관리
 ```python
-from database import DatabaseConnection
+from db_query import DatabaseConnection
 
 # 데이터베이스 연결
 db = DatabaseConnection()
@@ -212,4 +214,41 @@ latest = db.get_latest_data('dart_data', 'report_date')
 
 # 테이블 초기화
 db.truncate_table('prediction_results')
+```
+
+## 백업 및 복구
+
+### 백업 생성
+```bash
+# 자동 백업 스크립트 실행
+python generate_dump.py
+
+# 수동 백업
+mysqldump -u root -p IE_project > backup_YYYYMMDD.sql
+```
+
+### 복구
+```bash
+# 백업 파일로부터 복구
+mysql -u root -p IE_project < dump_20250922_154919.sql
+```
+
+## 연결 테스트
+
+### 기본 연결 확인
+```python
+from db_query import DatabaseConnection
+
+try:
+    db = DatabaseConnection()
+    db.connect()
+    print("데이터베이스 연결 성공")
+    
+    # 테이블 목록 확인
+    tables = db.execute_query("SHOW TABLES")
+    print(f"테이블 개수: {len(tables)}")
+    
+    db.disconnect()
+except Exception as e:
+    print(f"연결 실패: {e}")
 ```

@@ -1,18 +1,18 @@
-# 📊 ECOS 경제지표 데이터 수집
+# ECOS 경제지표 데이터 수집
 
 한국은행 경제통계시스템(ECOS) API를 활용한 거시경제 지표 자동 수집 모듈
 
-## 📋 개요
+## 개요
 
 건설업 경기 예측을 위한 핵심 거시경제 지표들을 ECOS API를 통해 **2010년 1월부터 월별**로 수집하고 MySQL 데이터베이스에 저장합니다.
 
-### 🔄 최신 업데이트 (2024.09)
+### 최신 업데이트 (2024.09)
 - **수집 기간**: 2010년 1월부터 현재까지 (기존 2015년 10월 → 2010년 1월)
 - **데이터 처리**: 분기별 → **월별 처리**로 변경
 - **날짜 형식**: YYYY-MM 형식으로 통일
 - **파생변수**: 분기별 변수 제거, 월별 파생변수 추가
 
-## 🔍 수집 지표
+## 수집 지표
 
 ### 금융 지표
 - **기준금리**: 한국은행 기준금리
@@ -35,7 +35,7 @@
 - **소비자 심리지수(CCSI)**: 소비 심리
 - **경제심리지수(ESI)**: 전반적 경제 심리
 
-## 📁 파일 구조
+## 파일 구조
 
 ```
 ecos/
@@ -51,7 +51,7 @@ ecos/
 └── README.md            # 이 파일
 ```
 
-## 🚀 사용법
+## 사용법
 
 ### 1. 환경 설정
 
@@ -87,7 +87,7 @@ jupyter notebook ecos-fetch.ipynb
 - **통합 파일**: `economic_data_merged.csv` (월별 데이터)
 - **MySQL 저장**: `ecos_data` 테이블에 저장
 
-## 🔧 주요 기능
+## 주요 기능
 
 ### 자동 데이터 수집
 - **API 호출 제한 준수**: 요청 간격 조절
@@ -108,7 +108,7 @@ jupyter notebook ecos-fetch.ipynb
 - **중복 방지**: 날짜 기준 중복 체크
 - **트랜잭션 처리**: 데이터 일관성 보장
 
-## 📊 데이터 구조
+## 데이터 구조
 
 ### 수집 데이터 형식 (월별)
 ```csv
@@ -119,39 +119,47 @@ date_str,base_rate,cpi,exchange_usd_krw_close,construction_bsi_actual,cpi_mom,te
 
 ### MySQL 테이블 구조 (월별)
 ```sql
-CREATE TABLE ecos_monthly_data (
+CREATE TABLE ecos_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    date_str VARCHAR(7) NOT NULL UNIQUE,  -- YYYY-MM 형식
+    date DATE NOT NULL UNIQUE,
     base_rate DECIMAL(5,2),
     cpi DECIMAL(8,2),
-    cpi_mom DECIMAL(5,2),                 -- CPI 월별 변화율
-    exchange_usd_krw_close DECIMAL(8,2),
-    exchange_mstd DECIMAL(8,4),           -- 환율 월별 표준편차
-    term_spread DECIMAL(5,2),             -- 10Y-3Y 국고채 금리차
-    credit_spread DECIMAL(5,2),           -- BBB-AA 회사채 금리차
-    base_rate_mdiff_bp DECIMAL(6,2),      -- 기준금리 월별 변화폭(bp)
+    exchange_usd_원_달러종가_15_30 DECIMAL(8,2),
     construction_bsi_actual DECIMAL(5,1),
-    -- ... 기타 경제지표 컬럼들
+    housing_sale_price DECIMAL(8,2),
+    housing_lease_price DECIMAL(8,2),
+    leading_index DECIMAL(8,2),
+    ccsi DECIMAL(8,2),
+    esi DECIMAL(8,2),
+    m2_growth DECIMAL(8,4),
+    market_rate_국고채3년 DECIMAL(5,2),
+    market_rate_국고채10년 DECIMAL(5,2),
+    market_rate_회사채3년_AA_ DECIMAL(5,2),
+    market_rate_회사채3년_BBB_ DECIMAL(5,2),
+    ppi_비금속광물 DECIMAL(8,2),
+    ppi_철강1차제품 DECIMAL(8,2),
+    import_price_비금속광물 DECIMAL(8,2),
+    import_price_철강1차제품 DECIMAL(8,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
-## 🔍 모니터링
+## 모니터링
 
 ### 수집 상태 확인
 ```python
-from database import DatabaseConnection
+from db_query import DatabaseConnection
 
 db = DatabaseConnection()
 db.connect()
 
 # 최신 데이터 확인
-latest_data = db.get_latest_ecos_data()
-print(f"최신 데이터: {latest_data}")
+latest_data = db.get_ecos_data()
+print(f"최신 데이터: {latest_data.tail()}")
 
 # 수집 통계
-total_count = db.get_ecos_data_count()
+total_count = len(db.get_ecos_data())
 print(f"총 데이터 개수: {total_count}")
 ```
 
@@ -160,7 +168,7 @@ print(f"총 데이터 개수: {total_count}")
 - **에러 로그**: 실패한 API 호출 및 원인 기록
 - **성공률**: 전체 지표 대비 수집 성공률
 
-## 🛠️ 설정 옵션
+## 설정 옵션
 
 ### API 호출 설정
 ```python
@@ -177,7 +185,7 @@ START_DATE = "2010-01"  # 2010년 1월부터
 END_DATE = now_ym()     # 현재 년월까지
 ```
 
-## ⚠️ 주의사항
+## 주의사항
 
 ### 데이터 특성
 - **발표 지연**: 일부 지표는 1-2개월 지연 발표
@@ -193,7 +201,7 @@ END_DATE = now_ym()     # 현재 년월까지
 4. 디스크 용량: CSV 저장 공간 확인
 ```
 
-## 📈 업데이트 주기
+## 업데이트 주기
 
 ### 권장 실행 주기
 - **월별 수집**: 매월 초 신규 데이터 업데이트

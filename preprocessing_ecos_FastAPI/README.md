@@ -48,20 +48,20 @@ DB_NAME=IE_project
 
 방법 1: 직접 실행
 ```bash
-cd final
+cd preprocessing_ecos_FastAPI
 python preprocessing.py
 ```
 
 방법 2: uvicorn 사용
 ```bash
-cd final
+cd preprocessing_ecos_FastAPI
 uvicorn preprocessing:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 4. API 테스트
 
 ```bash
-cd final
+cd preprocessing_ecos_FastAPI
 python test_api.py
 ```
 
