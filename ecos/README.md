@@ -2,234 +2,222 @@
 
 한국은행 경제통계시스템(ECOS) API를 활용한 거시경제 지표 자동 수집 모듈
 
-## 개요
+## 프로젝트 개요
 
-건설업 경기 예측을 위한 핵심 거시경제 지표들을 ECOS API를 통해 **2010년 1월부터 월별**로 수집하고 MySQL 데이터베이스에 저장합니다.
+건설업 경기 예측을 위한 핵심 거시경제 지표를 ECOS API를 통해 2010년 1월부터 현재까지 월별로 수집하여 MySQL 데이터베이스 및 CSV 파일로 저장하는 시스템입니다.
 
-### 최신 업데이트 (2024.09)
-- **수집 기간**: 2010년 1월부터 현재까지 (기존 2015년 10월 → 2010년 1월)
-- **데이터 처리**: 분기별 → **월별 처리**로 변경
-- **날짜 형식**: YYYY-MM 형식으로 통일
-- **파생변수**: 분기별 변수 제거, 월별 파생변수 추가
+### 주요 특징
+- 수집 기간: 2010년 1월부터 현재까지 (15년간 월별 데이터)
+- 데이터 형식: 월별 시계열 데이터
+- 저장 방식: MySQL 데이터베이스 + CSV 백업
+- API 최적화: 1년 단위 분할 요청으로 안정성 확보
 
-## 수집 지표
+## 수집 지표 목록
 
-### 금융 지표
-- **기준금리**: 한국은행 기준금리
-- **시장금리**: 국고채 3년/10년, 회사채 3년 (AA-, BBB-)
-- **통화량**: M2 증가율
+### 1. 금융/통화 지표
+- 기준금리 (722Y001)
+- 국고채 금리 3년/10년 (721Y001)
+- 회사채 금리 3년 AA-/BBB- (721Y001)
+- M2 통화량 증가율 (101Y003)
 
-### 물가 지표  
-- **소비자물가지수(CPI)**: 전체 물가 수준
-- **생산자물가지수(PPI)**: 비금속광물, 철강1차제품
-- **수입물가지수**: 비금속광물, 철강1차제품
+### 2. 물가 지표
+- 소비자물가지수 CPI (901Y009)
+- 생산자물가지수 PPI - 비금속광물/철강1차제품 (404Y014)
+- 수입물가지수 - 비금속광물/철강1차제품 (401Y015)
 
-### 건설업 특화 지표
-- **건설업 BSI 실적**: 건설업체 체감 경기
-- **주택매매가격지수**: 전국 주택 가격 동향
-- **주택전세가격지수**: 전국 전세 가격 동향
+### 3. 건설/부동산 지표
+- 건설업 BSI 실적/전망 (512Y007, 512Y008)
+- 주택매매가격지수 (901Y062)
+- 주택전세가격지수 (901Y063)
 
-### 기타 경제지표
-- **원/달러 환율**: 수입 원자재 비용 영향
-- **경기선행지수**: 미래 경기 동향
-- **소비자 심리지수(CCSI)**: 소비 심리
-- **경제심리지수(ESI)**: 전반적 경제 심리
+### 4. 경기/심리 지표
+- 경기선행지수 (901Y067)
+- 경제심리지수 ESI (513Y001)
+- 소비자신뢰지수 CCSI (511Y002)
+- 원/달러 환율 (731Y006)
 
 ## 파일 구조
 
 ```
 ecos/
-├── ECOS_data.py          # 메인 수집 스크립트 (2010년부터)
-├── ecos-fetch.ipynb      # 수집 테스트 노트북
-├── economic_data_merged.csv  # 통합 경제데이터 (월별)
-├── economic_data/        # 개별 지표 CSV 파일들
-│   ├── base_rate.csv
-│   ├── cpi.csv
-│   ├── exchange_usd_원_달러종가_15_30.csv
-│   ├── construction_bsi_actual.csv
-│   └── ... (기타 경제지표 파일들)
-└── README.md            # 이 파일
+├── ECOS_data.py                 # 메인 수집 스크립트
+├── economic_data_merged.csv     # 통합 경제 데이터
+├── economic_data/               # 개별 지표 CSV 파일
+│   ├── base_rate.csv           # 기준금리
+│   ├── cpi.csv                 # 소비자물가지수
+│   ├── construction_bsi_actual.csv  # 건설업 실적 BSI
+│   ├── housing_sale_price.csv  # 주택매매가격지수
+│   ├── market_rate_*.csv       # 각종 시장금리
+│   └── ...                     # 기타 경제지표 파일들
+└── README.md                   # 문서
 ```
 
-## 사용법
+## 설치 및 실행
 
 ### 1. 환경 설정
 
-#### ECOS API 키 발급
-1. [ECOS 사이트](https://ecos.bok.or.kr/) 접속
-2. 회원가입 및 로그인
-3. API 인증키 발급 신청
-4. `.env` 파일에 API 키 설정
+#### 필수 패키지 설치
+```bash
+pip install requests pandas mysql-connector-python python-dotenv
+```
+
+#### ECOS API 키 설정
+1. [ECOS 사이트](https://ecos.bok.or.kr/) 접속 후 회원가입
+2. API 인증키 발급 신청
+3. 프로젝트 루트에 `.env` 파일 생성
 
 ```env
 ECOS_API_KEY=your_ecos_api_key_here
 ```
 
-#### 필요 패키지 설치
-```bash
-pip install requests pandas mysql-connector-python python-dotenv
-```
-
 ### 2. 데이터 수집 실행
-```bash
-python ECOS_data.py
-```
 
-#### Jupyter Notebook으로 테스트
 ```bash
-jupyter notebook ecos-fetch.ipynb
+cd ecos
+python ECOS_data.py
 ```
 
 ### 3. 실행 결과
 
-- **콘솔 출력**: 수집 진행 상황 및 결과
-- **CSV 백업**: `economic_data/` 폴더에 개별 지표 저장
-- **통합 파일**: `economic_data_merged.csv` (월별 데이터)
-- **MySQL 저장**: `ecos_data` 테이블에 저장
+- **콘솔 출력**: 수집 진행 상황 및 결과 로그
+- **MySQL 저장**: `ecos_data` 테이블에 정규화된 데이터 저장
+- **CSV 백업**: `economic_data/` 폴더에 개별 지표별 파일 저장
+- **통합 파일**: `economic_data_merged.csv` 파일로 모든 지표 통합
 
-## 주요 기능
+## 시스템 구조
 
-### 자동 데이터 수집
-- **API 호출 제한 준수**: 요청 간격 조절
-- **에러 핸들링**: 네트워크 오류, API 오류 대응
-- **데이터 검증**: 수집된 데이터의 무결성 확인
+### 데이터 처리 흐름
+1. **API 호출**: ECOS API에서 1년 단위로 데이터 수집
+2. **데이터 정제**: 중복 제거, 날짜 형식 통일, 타입 변환
+3. **이중 저장**:
+   - MySQL 데이터베이스: 정규화된 구조로 저장
+   - CSV 파일: 백업 및 분석용 원본 데이터
 
-### 데이터 전처리
-- **날짜 형식 통일**: YYYY-MM 형태로 변환 (월별)
-- **결측치 처리**: 전월 이월, 선형 보간
-- **데이터 타입 변환**: 문자열 → 숫자형
-- **파생변수 생성**: 
-  - 월별 변화율 (MoM): CPI 월별 변화율
-  - 금리차 (Spread): 국고채/회사채 금리차
-  - 월별 변동성: 환율 3개월 이동 표준편차
+### 핵심 기능
 
-### 데이터베이스 연동
-- **증분 업데이트**: 신규 데이터만 추가
-- **중복 방지**: 날짜 기준 중복 체크
-- **트랜잭션 처리**: 데이터 일관성 보장
+#### API 호출 최적화
+- 1년 단위 분할 요청으로 대용량 데이터 안정적 수집
+- 재시도 로직 (최대 3회)
+- 서버 부하 방지를 위한 요청 간격 조절 (2초)
 
-## 데이터 구조
+#### 데이터 품질 관리
+- 중복 데이터 자동 제거
+- 결측치 처리
+- 데이터 타입 검증 및 변환
 
-### 수집 데이터 형식 (월별)
-```csv
-date_str,base_rate,cpi,exchange_usd_krw_close,construction_bsi_actual,cpi_mom,term_spread,credit_spread,...
-2024-01,3.50,113.2,1345.2,95.3,0.5,0.8,0.3,...
-2024-02,3.50,113.8,1332.8,98.1,0.6,0.7,0.2,...
-```
+#### 데이터베이스 연동
+- 배치 삽입으로 성능 최적화
+- 트랜잭션 처리로 데이터 일관성 보장
+- 기존 데이터 완전 교체 방식
 
-### MySQL 테이블 구조 (월별)
+## 데이터베이스 스키마
+
+### ecos_data 테이블 구조
 ```sql
 CREATE TABLE ecos_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
     date DATE NOT NULL UNIQUE,
     base_rate DECIMAL(5,2),
-    cpi DECIMAL(8,2),
-    exchange_usd_원_달러종가_15_30 DECIMAL(8,2),
-    construction_bsi_actual DECIMAL(5,1),
-    housing_sale_price DECIMAL(8,2),
-    housing_lease_price DECIMAL(8,2),
-    leading_index DECIMAL(8,2),
     ccsi DECIMAL(8,2),
+    construction_bsi_actual DECIMAL(5,1),
+    construction_bsi_forecast DECIMAL(5,1),
+    cpi DECIMAL(8,2),
     esi DECIMAL(8,2),
+    exchange_usd_krw_close DECIMAL(8,2),
+    housing_lease_price DECIMAL(8,2),
+    housing_sale_price DECIMAL(8,2),
+    import_price_non_metal_mineral DECIMAL(8,2),
+    import_price_steel_primary DECIMAL(8,2),
+    leading_index DECIMAL(8,2),
     m2_growth DECIMAL(8,4),
-    market_rate_국고채3년 DECIMAL(5,2),
-    market_rate_국고채10년 DECIMAL(5,2),
-    market_rate_회사채3년_AA_ DECIMAL(5,2),
-    market_rate_회사채3년_BBB_ DECIMAL(5,2),
-    ppi_비금속광물 DECIMAL(8,2),
-    ppi_철강1차제품 DECIMAL(8,2),
-    import_price_비금속광물 DECIMAL(8,2),
-    import_price_철강1차제품 DECIMAL(8,2),
+    market_rate_treasury_bond_10yr DECIMAL(5,2),
+    market_rate_treasury_bond_3yr DECIMAL(5,2),
+    market_rate_corporate_bond_3yr_AA DECIMAL(5,2),
+    market_rate_corporate_bond_3yr_BBB DECIMAL(5,2),
+    ppi_non_metal_mineral DECIMAL(8,2),
+    ppi_steel_primary DECIMAL(8,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
-## 모니터링
+### CSV 파일 형식
+```csv
+date,value,unit,stat_name,item_name
+202401,3.50,%,한국은행 기준금리,기준금리
+202402,3.50,%,한국은행 기준금리,기준금리
+```
 
-### 수집 상태 확인
+## 설정 및 관리
+
+### 수집 설정 변경
+```python
+# ECOS_data.py 내부 주요 설정값
+start, end = "201001", now_ym()  # 수집 기간 설정
+SLEEP_TIME = 2                   # API 호출 간격 (초)
+RETRY_COUNT = 3                  # 실패시 재시도 횟수
+BATCH_SIZE = 10                  # DB 배치 삽입 크기
+```
+
+### 데이터 검증 및 모니터링
 ```python
 from db_query import DatabaseConnection
 
+# 최신 데이터 확인
 db = DatabaseConnection()
 db.connect()
-
-# 최신 데이터 확인
 latest_data = db.get_ecos_data()
 print(f"최신 데이터: {latest_data.tail()}")
-
-# 수집 통계
-total_count = len(db.get_ecos_data())
-print(f"총 데이터 개수: {total_count}")
+print(f"총 데이터 개수: {len(latest_data)}")
 ```
 
-### 로그 모니터링
-- **수집 로그**: 콘솔 출력으로 진행 상황 확인
-- **에러 로그**: 실패한 API 호출 및 원인 기록
-- **성공률**: 전체 지표 대비 수집 성공률
-
-## 설정 옵션
-
-### API 호출 설정
-```python
-# ECOS_data.py 내부 설정
-SLEEP_TIME = 0.1  # API 호출 간격 (초)
-RETRY_COUNT = 3   # 실패시 재시도 횟수
-TIMEOUT = 30      # API 응답 대기 시간 (초)
-```
-
-### 데이터 수집 기간
-```python
-# 수집 시작/종료 날짜 설정 (2010년 1월부터)
-START_DATE = "2010-01"  # 2010년 1월부터
-END_DATE = now_ym()     # 현재 년월까지
-```
-
-## 주의사항
-
-### 데이터 특성
-- **발표 지연**: 일부 지표는 1-2개월 지연 발표
-- **수정 발표**: 기발표 지표의 수정 가능성
-- **휴일 영향**: 공휴일에는 데이터 없음
-
-### 오류 대응
-```python
-# 일반적인 오류 해결방법
-1. API 키 확인: .env 파일의 ECOS_API_KEY 확인
-2. 네트워크 연결: 인터넷 연결 상태 확인  
-3. 데이터베이스: MySQL 연결 및 권한 확인
-4. 디스크 용량: CSV 저장 공간 확인
-```
-
-## 업데이트 주기
-
-### 권장 실행 주기
-- **월별 수집**: 매월 초 신규 데이터 업데이트
-- **분기별 검증**: 분기별 전체 데이터 검증
-- **연별 백업**: 연말 전체 데이터 백업
-
-### 자동화 설정 (옵션)
+### 자동화 설정
 ```bash
-# crontab으로 월별 자동 수집 설정
-0 9 1 * * /path/to/python /path/to/ECOS_data.py
+# crontab을 이용한 월별 자동 수집 (매월 5일 오전 9시)
+0 9 5 * * cd /path/to/project/ecos && python ECOS_data.py
 ```
 
-## 📈 데이터 활용
+## 오류 해결
 
-### 전처리 관련 파일
-- **preprocessing/preprocessing.ipynb**: 월별 데이터 전처리 및 파생변수 생성
-- **modeling/**: 경제지표 예측 모델링
+### 일반적인 문제 및 해결방법
+
+1. **API 키 오류**
+   - `.env` 파일의 `ECOS_API_KEY` 확인
+   - ECOS 사이트에서 API 키 상태 확인
+
+2. **네트워크 연결 오류**
+   - 인터넷 연결 상태 확인
+   - 방화벽 설정 확인
+
+3. **데이터베이스 연결 오류**
+   - MySQL 서버 상태 확인
+   - 데이터베이스 접속 권한 확인
+   - `db_query.py` 설정 확인
+
+4. **디스크 용량 부족**
+   - CSV 파일 저장 공간 확인
+   - 오래된 백업 파일 정리
+
+### 데이터 무결성 확인
+```python
+# 누락된 날짜 확인
+import pandas as pd
+df = pd.read_csv('economic_data_merged.csv')
+date_range = pd.date_range(start='2010-01', end=pd.Timestamp.now(), freq='M')
+missing_dates = date_range.difference(pd.to_datetime(df['date']))
+print(f"누락된 날짜: {missing_dates}")
+```
+
+## 프로젝트 연계
+
+### 데이터 활용 모듈
+- `preprocessing/preprocessing.ipynb`: 수집 데이터 전처리 및 파생변수 생성
+- `modeling/LSTM_predict_final.ipynb`: 경제지표 기반 예측 모델링
+- `Heuristic/Heuristic.ipynb`: 휴리스틱 분석 모델
 
 ### 주요 파생변수
-1. **월별 변화율 (MoM)**:
-   - `cpi_mom`: CPI 월별 변화율 (%)
-   
-2. **금리차 (Spread)**:
-   - `term_spread`: 장단기 금리차 (10Y-3Y 국고채)
-   - `credit_spread`: 신용위험 프리미엄 (BBB-AA 회사채)
-   
-3. **변동성 지표**:
-   - `exchange_mstd`: 환율 3개월 이동 표준편차
-   - `base_rate_mdiff_bp`: 기준금리 월별 변화폭 (bp)
-
+- 월별 변화율 (Month-over-Month): CPI, PPI 등의 전월 대비 변화율
+- 금리 스프레드: 장단기 금리차, 신용 스프레드
+- 이동평균: 주요 지표의 3개월, 6개월 이동평균
+- 변동성 지표: 환율, 금리의 월별 변동성
 
